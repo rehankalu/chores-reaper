@@ -176,7 +176,7 @@ lands on the previous local day.
 
 **Fix.** Add a `formDate` helper on date-fns-tz that works in the **household** timezone (not the
 device's):
-- Parse with `fromZonedTime(`${v}T00:00`, tz)`.
+- Parse with ``fromZonedTime(`${v}T00:00`, tz)``.
 - Format with `formatInTimeZone(d, tz, 'yyyy-MM-dd')`.
 
 Thread `householdTimezone` into `ChoreFormModal`/`ChoreForm`.
