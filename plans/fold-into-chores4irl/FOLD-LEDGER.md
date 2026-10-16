@@ -1,15 +1,20 @@
 # Fold ledger — chores-reaper features → chores4irl (Cloudflare)
 
 > **Temporary reference ledger.** Kept in `chores-reaper` only, as the record of how the Pi-kiosk
-> app's post-divergence features map onto the Cloudflare app. Its canonical successor is the
-> chores4irl GitHub Wiki META-PLAN and one GitHub issue per feature in `4IRL/chores4irl`.
+> app's post-divergence features map onto the Cloudflare app. The canonical copies are:
+> - **The chores4irl GitHub Wiki `META-PLAN` page** for the table, order, dependencies and decisions.
+> - **One GitHub issue per item in `4IRL/chores4irl`** for the functional spec.
+>
 > Planning documents are not committed into the 4IRL org repos.
 >
-> **Created:** 2026-10-16 · **SOURCE:** `chores-reaper` @ `479b729` · **TARGET:** `chores4irl` @ `fddd58e`
+> **Created:** 2026-10-16 · **Revised:** 2026-10-16 (owner decisions; bugs split out; Track E handed to pi-kiosk)
+> **SOURCE:** `chores-reaper` @ `479b729` · **TARGET:** `chores4irl` @ `fddd58e`
 >
-> **ID namespaces.** `F#` below are **chores4irl** IDs, new and numbered in recommended
-> implementation order. `CR-F#` / `CR-#nn` are **chores-reaper** F-IDs and PR numbers, cited as
-> provenance only. The two schemes are unrelated, so never mix them.
+> **ID namespaces.**
+> - **`B#` and `F#`** are **chores4irl** IDs for bugs and features, numbered in implementation order.
+>   Bugs come first and are addressed in turn.
+> - **`CR-F#` and `CR-#nn`** are **chores-reaper** F-IDs and PR numbers. They are cited only as
+>   provenance; the two schemes are unrelated.
 >
 > **Architecture rule.** TARGET's architecture is kept: Workers + Hono, D1, Pages, Access,
 > multi-household scoping, offline outbox, and document (window) scroll on phones. Every port is
@@ -17,387 +22,502 @@
 
 ## Divergence
 
-- TARGET's first commit `37cb116` (2026-07-03) was seeded from SOURCE `42040cc` (CR-#21, SSE
-  sync, 2026-06-30). Normalised diffs of the shared frontend files are smallest at that commit.
-  CR-#21's SSE frontend was deliberately dropped at the seed: Worker isolates have no shared
-  in-process emitter.
-- SOURCE app-code merges since the seed are:
-  - CR-#23 swipe rework
-  - CR-#24 room datalist
-  - CR-#25 search filter
-  - CR-F1 #27 screen-blank
-  - CR-F2 #28 touch lock
-  - CR-#32 bar colour
-  - CR-F14 #34 clear-✕
-  - CR-F4 #38 field removal
-  - CR-F5 #39 frosted deck
-  - CR-F6 #43 c4i hostname
-  - CR-F21 #46 form/date/toast
-  - CR-F16 #50 sort
-  - CR-F17 #52 strip
-  - CR-F18 #54 scroll-to-top
-  - CR-F19 #56 lock reset
-  - CR-F22 #57 overlay scrollbar
-  - CR-F20 #60 permissive lock
-- Unbuilt SOURCE backlog items considered here: CR-F11 undo, CR-F12 redo, CR-F15 kiosk-shell, and
-  CR-F23 Pi 5 hosting.
+TARGET's first commit `37cb116` (2026-07-03) was seeded from SOURCE `42040cc` (CR-#21, SSE sync,
+2026-06-30). Normalised diffs of the shared frontend files are smallest at that commit. CR-#21's
+SSE frontend was deliberately dropped at the seed, because Worker isolates have no shared
+in-process emitter.
 
-## Feature list
+SOURCE app-code merges since the seed:
 
-Effort: S=1 · M=2 · L=3 · XL=5. Order = recommended implementation order = F-ID. ★ = focus.
-
-| F | Feature | Source | Track | Effort | Depends on | Gate |
-|---|---|---|---|---|---|---|
-| ★F1 | Form date math in household timezone + Last Completed defaults to today | CR-F21 (part) | A · Correctness | S | — | — |
-| F2 | Bar colour: restore 50 % fill translucency; red only when overdue | CR-#32 | A · Correctness | S | — | — |
-| F3 | Apply D1 migrations in CI before Worker deploy | (gap vs CR boot migration) | A · Ops | S | — | — |
-| F4 | Live refresh: re-pull on visible/focus + slow poll while visible | CR-#21 (stage 1) | D · Sync | S | — | — |
-| F5 | Chore-name search filter | CR-#25 | C · List UX | S | — | — |
-| F6 | Clear-✕ on free-text inputs | CR-F14 | C · List UX | S | F5 (soft) | — |
-| F7 | Feedback toast + surface non-409 mutation errors | CR-F21 (part) | A · Correctness | M | — | — |
-| F8 | Remove Details and Long-term task fields (D1 migration) | CR-F4 | B · Status & sort | M | F3 | — |
-| F9 | Status-bucketed quota sort + Urgency weighting (`classifyStatus`) | CR-F16 (algorithm) | B · Status & sort | M | F2, F8 | — |
-| F10 | Status-count strip (done today / due soon / overdue) | CR-F17 | B · Status & sort | S | F9; F5 (soft) | — |
-| F11 | Stable list order: re-sort only on load / midnight / household switch | CR-F16 (behaviour) | B · Status & sort | M | F9 | owner decision |
-| F12 | Undo last complete / edit / delete | CR-F11 (unbuilt) | D · Sync & recovery | M | F7 | — |
-| F13 | Frosted sticky bottom Add-Chore deck | CR-F5 | C · List UX | M | — | — |
-| F14 | Floating scroll-to-top button (window scroll) | CR-F18 | C · List UX | S | F13 (offset) | — |
-| F15 | `scrollbar-none` utility + hide native bars on modal cards | CR-F22 (subset) | C · List UX | S | — | — |
-| F16 | Swipe threshold as % of bar width, clamped | CR-#23 (part) | C · List UX | S | — | optional |
-| F17 | Off-Cloudflare D1 backup export (scheduled) | (gap vs CR backups) | A · Ops | S | — | — |
-| F18 | Realtime household doorbell (Durable Object + hibernatable WebSocket) | CR-#21 (stage 2) | D · Sync | L | F4 | — |
-| F19 | Redo | CR-F12 (unbuilt) | D · Sync & recovery | S | F12 | optional |
-| F20 | Kiosk embeddability: `frame-ancestors` + Access iframe login | CR-F15 (adapted) | E · Kiosk | M | F18 (soft) | owner decision: wall Pi frames TARGET vs CR-F23 |
-| F21 | Kiosk-mode lock guard + lock-time view reset (app side of `kiosk/v1`) | CR-F2 / F20 / F19 | E · Kiosk | M | F20 | pi-kiosk Phase 4 |
-
-**Tally:**
-
-| Tracks | Points |
+| Ref | Change |
 |---|---|
-| A + B + C + D, ungated | 23 |
-| F11, F16 and F19, needing a decision or optional | 4 |
-| Kiosk track E, gated | 4 |
+| CR-#23 | Swipe rework |
+| CR-#24 | Room datalist |
+| CR-#25 | Search filter |
+| CR-F1 #27 | Screen-blank |
+| CR-F2 #28 | Touch lock |
+| CR-#32 | Bar colour |
+| CR-F14 #34 | Clear-✕ |
+| CR-F4 #38 | Field removal |
+| CR-F5 #39 | Frosted deck |
+| CR-F6 #43 | c4i hostname |
+| CR-F21 #46 | Form/date/toast |
+| CR-F16 #50 | Sort |
+| CR-F17 #52 | Strip |
+| CR-F18 #54 | Scroll-to-top |
+| CR-F19 #56 | Lock reset |
+| CR-F22 #57 | Overlay scrollbar |
+| CR-F20 #60 | Permissive lock |
 
-**Focus path:** F1 → F2 → F3 → F8 → F9 → F10. The two shipped bugs come first, then the
-migration safety net, then the field removal and the sort it unblocks. F4–F7 are independent quick
-wins and can be interleaved.
+Unbuilt SOURCE backlog considered: CR-F11 undo, CR-F12 redo, CR-F15 kiosk-shell, CR-F23 Pi 5
+hosting.
+
+## Owner decisions (2026-10-16)
+
+- **F10 stable order:** retained. On phones the list stays put until midnight, as on the kiosk.
+- **F16 swipe threshold:** folded in for the `Settings › Chore swipe style › Android` mode only.
+  iOS mode is unchanged.
+- **F11 undo and F12 redo:** both are folded in as features, no longer optional.
+- **Four bugs found in TARGET get their own issues (B1–B4)**, addressed in turn before features.
+- **Wall display:** the wall Pi shows the **Cloudflare app**. All kiosk work belongs to
+  `rehankalu/pi-kiosk`, not to this fold, wiki or issues. It covers kiosk-shell, screen-blank,
+  the touch lock with its view reset, and embedding/display. See *Handed to pi-kiosk* below.
+- **CR-F23 Pi 5 hosting:** probably made obsolete by this reconciliation, since the wall Pi shows
+  the Cloudflare app. It is left out.
+- **Issue bodies hold the spec.** The wiki holds the table, order, dependencies and decisions.
+
+## Item list
+
+Effort: S=1 · M=2 · L=3. The ID order is the implementation order. ★ marks the focus.
+
+| ID | Item | Source | Track | Effort | Depends on |
+|---|---|---|---|---|---|
+| ★B1 | Add/edit form dates are off by one day for households west of UTC | CR-F21 (date fix) | A · Bugs | S | — |
+| B2 | Chore bar fills are opaque (dead Tailwind v3 `bg-opacity-50`) | CR-#32 | A · Bugs | S | — |
+| B3 | Chore bars turn red on the due date instead of after it | CR-#32 | A · Bugs | S | — |
+| B4 | Failed chore edits (non-409) are swallowed silently | (TARGET-only) | A · Bugs | S | — |
+| F1 | Last Completed defaults to today in add mode | CR-F21 (defaults) | B · Form & feedback | S | B1 |
+| F2 | Apply D1 migrations in CI before Worker deploy | (gap vs CR boot migration) | E · Ops | S | — |
+| F3 | Live refresh: re-pull on visible/focus + slow poll while visible | CR-#21 (stage 1) | D · Sync & recovery | S | — |
+| F4 | Chore-name search filter | CR-#25 | C · List UX | S | — |
+| F5 | Clear-✕ on free-text inputs | CR-F14 | C · List UX | S | F4 (soft) |
+| F6 | Feedback toast (success / error, one at a time) | CR-F21 (toast) | B · Form & feedback | M | B4 |
+| F7 | Remove Details and Long-term task fields (D1 migration) | CR-F4 | S · Status & sort | M | F2 |
+| F8 | Status-bucketed quota sort + Urgency weighting | CR-F16 (algorithm) | S · Status & sort | M | B2, B3, F7 |
+| F9 | Status-count strip (done today / due soon / overdue) | CR-F17 | S · Status & sort | S | F8; F4 (soft) |
+| F10 | Stable list order: re-sort only on load / midnight / household switch | CR-F16 (behaviour) | S · Status & sort | M | F8 |
+| F11 | Undo last complete / edit / delete | CR-F11 (unbuilt) | D · Sync & recovery | M | F6 |
+| F12 | Redo | CR-F12 (unbuilt) | D · Sync & recovery | S | F11 |
+| F13 | Frosted sticky bottom Add-Chore deck | CR-F5 | C · List UX | M | — |
+| F14 | Floating scroll-to-top button (window scroll) | CR-F18 | C · List UX | S | F13 (offset) |
+| F15 | `scrollbar-none` utility + hide native bars on modal cards | CR-F22 (subset) | C · List UX | S | — |
+| F16 | Android swipe style: threshold as a fraction of bar width | CR-#23 (part) | C · List UX | S | — |
+| F17 | Off-Cloudflare D1 backup export (scheduled) | (gap vs CR backups) | E · Ops | S | — |
+| F18 | Realtime household doorbell (Durable Object + hibernatable WebSocket) | CR-#21 (stage 2) | D · Sync & recovery | L | F3 |
+
+**Tally:** bugs 4 · features 26 · total **30 points**.
+
+**Focus path:** B1 → B2 → B3 → B4, then F2 → F7 → F8 → F9 → F10. The bugs come first, then the
+migration safety net, then the field removal and the sort it unblocks. F1 and F3–F6 are
+independent quick wins and can be interleaved after the bugs.
+
+### Tracks
+- **A · Bugs:** defects TARGET ships today. Fixed in turn, before features.
+- **B · Form & feedback:** add-mode default and the toast.
+- **S · Status & sort:** CR-#32 → CR-F4 → CR-F16 → CR-F17 lineage.
+- **C · List UX:** search, clear-✕, deck, scroll chrome, swipe.
+- **D · Sync & recovery:** cross-device freshness, undo and redo.
+- **E · Ops:** deploy safety and backups.
 
 ### Not ported (decided)
 
 | Source | Why |
 |---|---|
-| CR-F1 auto screen-blank (#27) | Screen property, owned by pi-kiosk Phase 2. Meaningless on phones. |
-| CR-F6 `c4i.local` hostname (#43) | Pi host config. TARGET is on `chores.4irl.app`. |
-| CR-F23 Pi 5 hosting | SOURCE hosting. It is the *alternative* to F20 (see F20's gate). |
-| CR-#24 room datalist (+ mobile follow-up) | TARGET rooms are managed D1 entities chosen by native `<select>`. That control is already correct on phones, so the mobile bug can't occur. |
+| CR-#24 room datalist (+ its mobile follow-up) | TARGET rooms are managed D1 entities chosen by native `<select>`, which is already correct on phones. |
 | CR-F22 overlay thumb + full-bleed | Phones already draw fading overlay scrollbars. Only the CSS subset (F15) is worth taking. |
-| CR-#23 direction swap + progressive reveal | TARGET's per-user `android` swipe style already does this. Only the threshold tweak is left (F16). |
+| CR-#23 direction swap + progressive reveal | TARGET's per-user `android` swipe style already does this. Only the threshold (F16) remains. |
+| CR-F6 `c4i.local` hostname | Pi host config. TARGET is on `chores.4irl.app`. |
+| CR-F23 Pi 5 hosting | Probably obsoleted: the wall Pi shows the Cloudflare app. |
 
-### Tracks
+### Handed to pi-kiosk (not in the chores4irl wiki or issues)
 
-- **A · Correctness & ops:** bugs TARGET ships today and deploy safety. They don't depend on
-  anything else.
-- **B · Status & sort:** CR-#32 → CR-F4 → CR-F16 → CR-F17 lineage.
-- **C · List UX:** search, clear-✕, deck, scroll chrome, swipe.
-- **D · Sync & recovery:** cross-device freshness and undo.
-- **E · Kiosk:** only if the wall Pi displays the Cloudflare app. Gated.
+The wall Pi shows `chores.4irl.app`. `rehankalu/pi-kiosk` owns everything below; log it there from a
+pi-kiosk session.
+
+**Covered sources:**
+- **CR-F1** screen-blank
+- **CR-F2/F20** touch lock
+- **CR-F19** lock-time view reset
+- **CR-F15** kiosk-shell adoption / embeddability
+
+**Display method — owner direction.** Embedding in an iframe needs Cloudflare Access to work in a
+cross-site frame: `SameSite=None`, plus the Access/IdP login pages refuse to be framed. The owner
+asked whether a simpler method exists: Chromium full-screen directly on `chores.4irl.app`, with
+users unable to navigate away, minimise or close it. Options to evaluate in pi-kiosk:
+- **Chromium `--kiosk` on the URL directly.**
+  - Login is top-level, so there is no iframe or `SameSite` problem.
+  - Use a persistent profile so the Access cookie survives reboots, and a long Access session.
+  - A managed policy locks navigation:
+    - `URLBlocklist: ["*"]`
+    - `URLAllowlist`: `chores.4irl.app`, the team's `*.cloudflareaccess.com`, and the IdP's login
+      host
+    - `DeveloperToolsAvailability: 2`
+    - `IncognitoModeAvailability: 1`
+    - disable the `chrome://` pages
+  - A systemd user unit restarts Chromium on exit. With no keyboard attached, touch alone can't
+    leave kiosk mode.
+  - **Cost:** shell-drawn overlays can no longer sit above the app.
+    - Screen-blank moves to the agent (DPMS / `wlr-randr` / backlight).
+    - The lock either needs the app's cooperation (a URL flag or a postMessage-free signal) or
+      becomes an agent-level input grab.
+- **Keep the iframe shell.** It keeps the overlay model but must solve the Access-in-iframe
+  login.
+- **A hybrid.** `--kiosk` on the app URL for login and normal use. The shell is used only for
+  console/overlay screens.
 
 ---
 
-## Feature contracts
+## Item specs
 
-Each section below is the source text for that feature's GitHub issue: what it does, what it
-changes, and how to know it's done.
+Each section below is the source text for that item's GitHub issue: what it does, what changes,
+and how to know it's done. The issue body is canonical once created.
 
-### F1 — Form date math in household timezone + Last Completed defaults to today · S · ★
-**Function.** A chore added or edited with "Last Completed = today" shows *0 days ago* in every
-household timezone. Edits round-trip without moving the date. In add mode, Last Completed
-defaults to today (the household's today) and is re-applied after submit.
-**Today (bug).** `frontend/src/components/form/ChoreForm.tsx` formats with
-`toISOString().slice(0,10)` (~l.34) and parses with `new Date('yyyy-mm-dd')` (~l.74). That gives UTC
-midnight, so every household west of UTC sees "1 day ago". The add default is `''`.
-**Port.** Add a `formDate` helper built on date-fns-tz:
-- parse: `fromZonedTime(\`${v}T00:00\`, tz)`
-- format: `formatInTimeZone(d, tz, 'yyyy-MM-dd')`
-- today: `formatInTimeZone(new Date(), tz, 'yyyy-MM-dd')`
+### B1 — Add/edit form dates are off by one day for households west of UTC · S · ★
+**Bug.** A chore added or edited with Last Completed = today shows *1 day ago* in every household
+west of UTC (all of the Americas). Editing an evening completion can also shift its date back a
+day.
 
-Use the **household** timezone, not the device's (CR-F21 used device-local, which is wrong here).
+**Cause.** `frontend/src/components/form/ChoreForm.tsx` has two UTC conversions:
+- It formats with `toISOString().slice(0,10)` (~l.34).
+- It parses with `new Date('yyyy-mm-dd')` (~l.74), which yields UTC midnight.
+
+`ChoreTimerBar.tsx` and `choreSort.ts` floor days in the household timezone, so the UTC midnight
+lands on the previous local day.
+
+**Fix.** Add a `formDate` helper on date-fns-tz that works in the **household** timezone (not the
+device's):
+- Parse with `fromZonedTime(`${v}T00:00`, tz)`.
+- Format with `formatInTimeZone(d, tz, 'yyyy-MM-dd')`.
+
 Thread `householdTimezone` into `ChoreFormModal`/`ChoreForm`.
+
 **Done when:**
-- Unit tests pass for UTC−8, UTC and UTC+10 households when add-today gives 0 days.
+- Unit tests for UTC−8, UTC and UTC+10 households show today → 0 days.
 - An edit round-trip leaves the date unchanged.
-- The add-mode default is today.
 
-### F2 — Bar colour: translucency + red only when overdue · S
-**Function.** Bar fills render at 50 % opacity again. Red means only overdue
-(`daysSince > frequency`). A chore *at* its due date is orange. Green is used while
-`remainingRatio > 0.375`.
-**Today (bug).** `utils/choreBarMath.ts` appends the Tailwind v3 `bg-opacity-50`, which does
-nothing on Tailwind v4, so bars are opaque. `assets/constants.ts` has a 4-step ramp that turns
-red at ratio 0. `text-opacity-80` in `ChoreTimerBar.tsx` is also dead.
-**Port.** Return bare colours and put `opacity-50` on `ProgressBar`. Switch to the 2-threshold
-scheme. Decide whether to drop the yellow tier (SOURCE dropped it).
-**Done when:**
-- Bars are visibly translucent.
-- A chore on its due date is orange and turns red the next day.
-- Tests are updated.
+### B2 — Chore bar fills are opaque · S
+**Bug.** Bar fills should be 50 % translucent but render fully opaque.
 
-### F3 — Apply D1 migrations in CI before Worker deploy · S
+**Cause.** `utils/choreBarMath.ts` appends the Tailwind v3 `bg-opacity-50`. That class doesn't
+exist in Tailwind v4 (TARGET is on `^4.3.2`). `text-opacity-80` in `ChoreTimerBar.tsx` is
+likewise dead.
+
+**Fix.**
+- Return bare colours from `choreBarMath.ts`.
+- Add `opacity-50` (or `/50` colour syntax) on `ProgressBar.tsx`.
+- Replace `text-opacity-80`.
+
+**Done when:** bars are visibly translucent and tests assert the class.
+
+### B3 — Chore bars turn red on the due date instead of after it · S
+**Bug.** A chore exactly at its due date (`daysSince === frequency`, remaining ratio 0) already
+shows red. Red should mean overdue only (`daysSince > frequency`).
+
+**Cause.** `assets/constants.ts` uses a 4-step ramp that reaches red at ratio 0: green > 0.5,
+yellow > 0.2, orange > 0, red at −∞.
+
+**Fix.** Adopt the two-threshold scheme:
+- green while remaining ratio > 0.375
+- orange otherwise
+- red only when overdue
+
+Decide whether to keep a yellow tier; chores-reaper dropped it. The shared classifier comes later
+in F8.
+
+**Done when:** a chore on its due date is orange and turns red the next day, with tests.
+
+### B4 — Failed chore edits are swallowed silently · S
+**Bug.** When a create/edit/complete/delete fails with anything other than a 409 conflict (for
+example 400 invalid room, or 500), the user sees nothing. The optimistic change also stays on
+screen, so the user believes it saved.
+
+**Cause.** `mutate()` in `ChoresView.tsx` (~l.79–100) handles only the 409 conflict path.
+`handleFlushResults` handles only outbox successes.
+
+**Fix.**
+- Roll back the optimistic change on a non-409 failure.
+- Show an error using the existing `StatusBanner` (or a minimal inline message). F6 later moves
+  this into the toast.
+- Report outbox flush failures the same way.
+
+**Done when:** tests for 400, 500 and a flush failure each show the rollback and an error message.
+
+### F1 — Last Completed defaults to today in add mode · S · needs B1
+**Function.** In add mode, Last Completed defaults to the household's today and is re-applied
+after each submit. Room already defaults to the active tab.
+
+**Port.** `buildInitialFormState` in `ChoreForm.tsx` uses B1's `formatInTimeZone(new Date(), tz, …)`.
+
+**Done when:** the add form opens with today and resets to today after submit.
+
+### F2 — Apply D1 migrations in CI before Worker deploy · S
 **Function.** A deploy can never put Worker code live ahead of the schema it needs.
+
 **Today.** `deploy-backend` in `.github/workflows/ci.yml` runs `wrangler deploy` only.
-`make migrate-remote` is manual.
-**Port.** Add `wrangler d1 migrations apply chores4irl --remote` before deploy. Document Time
-Travel bookmark rollback in `ARCHITECTURE.md`. Destructive migrations (F8) still need
-code-first ordering, so document the two-phase pattern.
-**Done when:** CI runs the migration step on `main`, and a no-op run passes.
+`make migrate-remote` is a manual step.
 
-### F4 — Live refresh (stage 1 of multi-device sync) · S
-**Function.** A phone or second screen shows other members' changes without a reload. The
-app re-pulls chores when it becomes visible or focused, and polls every 30–60 s while visible.
-A re-pull never yanks state while a form or dialog is open: it is held and flushed on close.
+**Port.**
+- Add `wrangler d1 migrations apply chores4irl --remote` before the deploy.
+- Document Time Travel bookmark rollback in `ARCHITECTURE.md`.
+- Document the two-phase pattern for destructive migrations: code first, migration later (needed
+  by F7).
+
+**Done when:** CI runs the migration step on `main` and a no-op run passes.
+
+### F3 — Live refresh (multi-device sync, stage 1) · S
+**Function.** A phone or second screen shows other members' changes without a reload. The app
+re-pulls chores when it:
+- becomes visible or focused
+- reaches each 30–60 s poll while visible
+
+A re-pull never disturbs an open form or dialog. It is held and flushed on close.
+
 **Today.** `ChoresView.tsx` fetches only on mount and on `online`.
-**Port.**
-- Add a `useChoreRefresh` hook reusing `load()`'s generation guard.
-- Port SOURCE's hold-while-mutating idea, but use a ref-counted gate: CR push-review finding,
-  `PUSH-REVIEW-FINDINGS.md` "Multi-device sync".
-- Skip the poll while the outbox is flushing.
-**Done when:** a change on device A appears on device B within one poll interval or on refocus.
-An open edit form is not disturbed.
 
-### F5 — Chore-name search filter · S
-**Function.** A persistent search box above the list filters chores by case-insensitive,
-trimmed substring of the name. It is ANDed with the room tab. It is view-only, so data and sort
-order never change. The query survives room switches and re-pulls. "No chores match" is
-distinct from "No chores yet".
 **Port.**
-- `components/chore/ChoreSearchInput.tsx`, styled `text-base sm:text-sm` to avoid iOS zoom,
-  with `type="search"` and `enterKeyHint="search"`.
-- Lift the query into `Layout` (`App.tsx` `LayoutContext`) so it survives `/admin` navigation.
+- Add a `useChoreRefresh` hook that reuses `load()`'s generation guard.
+- Gate re-pulls with a ref-counted gate. This follows the chores-reaper push-review finding on
+  multi-device sync.
+- Skip the poll while the outbox is flushing.
+
+**Done when:** a change on device A appears on device B within one poll or on refocus, and an
+open edit form is undisturbed.
+
+### F4 — Chore-name search filter · S
+**Function.** A persistent search box above the list filters chores by name.
+- **Matching:** case-insensitive, trimmed substring, ANDed with the room tab.
+- **View-only:** data and sort order never change.
+- **Persistence:** the query survives room switches, re-pulls and admin navigation.
+- **Empty state:** "No chores match" is distinct from "No chores yet".
+
+**Port.**
+- New `components/chore/ChoreSearchInput.tsx` with:
+  - `text-base sm:text-sm`, to avoid iOS zoom
+  - `type="search"`
+  - `enterKeyHint="search"`
+- Lift the query into `Layout` (`App.tsx` `LayoutContext`).
 - Add a `useMemo` filter between `useRoomFilter` and the sort.
 
-**Done when:** filter + room AND logic is tested, the query persists across tab and route
-changes, and the empty-match state is shown.
+**Done when:** filter and room-AND tests pass, persistence is tested, and the empty-match state
+renders.
 
-### F6 — Clear-✕ on free-text inputs · S
-**Function.** Non-empty free-text fields show a ✕ (44 px hit target). Tapping it clears only that
-field, never submits or closes, and refocuses the input.
+### F5 — Clear-✕ on free-text inputs · S
+**Function.** A non-empty free-text field shows a ✕ with a 44 px hit target. Tapping it clears
+only that field (it never submits or closes) and refocuses the input.
+
 **Port.**
-- Shared `components/common/ClearButton.tsx` (lucide `X`) and an opt-in `clearable` on `FormField`.
-- Enable it on: chore Name, Details (until F8), the F5 search box, and optionally the admin
-  search inputs. Room is a `<select>`, so it gets no ✕.
-- Hide the native `::-webkit-search-cancel-button` so there aren't two ✕s.
+- Shared `components/common/ClearButton.tsx` (lucide `X`) plus an opt-in `clearable` prop on
+  `FormField`.
+- Enable it on chore Name, on Details (until F7) and on the F4 search box. Admin search inputs are
+  optional.
+- Room is a `<select>`, so it gets no ✕.
+- Hide the native `::-webkit-search-cancel-button`.
 
-**Done when:** the ✕ appears only when the field is non-empty, clears and refocuses, and tests
-are updated.
+**Done when:** the ✕ shows only when non-empty and clears and refocuses, with tests.
 
-### F7 — Feedback toast + surface mutation errors · M
-**Function.** One bottom-centre toast at a time (keyed remount):
-- **Success:** green, auto-dismisses, fires only after the server confirms.
-- **Error:** red, stays until dismissed. A later successful mutation clears a standing error.
-- **Non-409 failures** (400 invalid room, 500) roll back the optimistic change and show an
-  error. Today they are swallowed silently.
-- **Offline-queued writes:** show nothing beyond the existing offline banner (or a neutral
-  "saved offline"; decide at planning).
-- **Outbox flush failures:** surface as errors.
+### F6 — Feedback toast · M · needs B4
+**Function.** One bottom-centre toast at a time (keyed remount).
+- **Success:** green, auto-dismisses, and fires only after the server confirms.
+- **Error:** red and stays until dismissed. A later success clears a standing error. B4's error
+  surface moves here.
+- **Offline-queued writes:** show nothing beyond the offline banner, or a neutral "saved offline".
+  Decide at planning.
 
-**Today.** `mutate()` in `ChoresView.tsx` (~l.79–100) gives no success feedback and keeps
-optimistic state on errors. `StatusBanner` covers only stale/offline/switch states.
-**Port.** `components/common/Toast.tsx` plus `onSuccess`/`onError` plumbing in `mutate()` and
-`handleFlushResults`. The z-ladder must fit TARGET's modals (`z-50`). Bottom offset is
-`env(safe-area-inset-bottom)`-aware.
-**Done when:** each outcome (success, 4xx, 5xx, offline-queued, flush failure) is tested.
+**Port.**
+- `components/common/Toast.tsx`.
+- `onSuccess`/`onError` plumbing in `mutate()` and `handleFlushResults`.
+- The z-index must fit below TARGET's modals (`z-50`).
+- The bottom offset accounts for `env(safe-area-inset-bottom)`.
 
-### F8 — Remove Details and Long-term task fields · M · needs F3
-**Function.** The add/edit form drops *Details* and *Long-term task*. Long-term chores stop being
-pinned to the bottom. Old clients and queued outbox entries that still send these keys are
-accepted, and the keys are ignored, never rejected.
+**Done when:** tests cover success, 4xx, 5xx, offline-queued and flush failure.
+
+### F7 — Remove Details and Long-term task fields · M · needs F2
+**Function.**
+- The add/edit form drops *Details* and *Long-term task*.
+- Long-term chores stop being pinned to the bottom.
+- Old clients and queued outbox entries that still send these keys are accepted with the keys
+  ignored, never rejected.
+
 **Port.**
 - **Two-phase deploy:**
   1. Ship code that no longer reads or writes the columns and ignores the keys.
   2. Then add the migration `ALTER TABLE chores DROP COLUMN details` and
      `ALTER TABLE chores DROP COLUMN long_term_task`.
-- **Check first:** no index or view references either column.
-- **Touches:** `backend/src/chores.ts`, `seed-mock-chores.ts`, `types/SharedTypes.d.ts`,
-  `ChoreForm.tsx`, `choreSort.ts` (long-term partition), `outbox.ts` payload type (tolerant),
-  `mockApi.ts`, `ARCHITECTURE.md`, backend and e2e tests.
+- Check that no index or view references either column.
+- **Touches:**
+  - backend: `backend/src/chores.ts`, `seed-mock-chores.ts`
+  - shared types: `types/SharedTypes.d.ts`
+  - form: `ChoreForm.tsx`
+  - sort: `choreSort.ts` (the long-term partition)
+  - outbox: `outbox.ts` payload type (made tolerant)
+  - mock API: `mockApi.ts`
+  - docs: `ARCHITECTURE.md`
+  - backend and e2e tests
 
 **Done when:**
-- The migration has been applied by CI.
-- A replayed legacy outbox payload with both keys succeeds.
+- The migration is applied by CI.
+- A replayed legacy outbox payload succeeds.
 - Neither field appears in the UI.
 
-### F9 — Status-bucketed quota sort + Urgency weighting · M · needs F2, F8
-**Function.** The list is ranked by status bucket.
-- **Classifier:** one shared `classifyStatus(daysSince, frequency)` classifies each chore as
-  red (overdue), orange (due soon, ratio ≤ 0.375) or green. Bar colour uses the same function.
-- **Ranking within buckets:**
-  - red: by urgency-weighted overdue ratio (low 0.75 / medium-or-unset 1 / high 1.5), with
-    duration as the tie-break
-  - orange: by remaining ratio, ascending
-  - green: by days since, ascending
-- **Top 8 slots:** filled by quota red 4 / orange 2 / green 2. Each red at weighted ratio ≥ 1
-  takes an extra slot, from orange first. Unused slots cascade.
-- **Urgency:** affects sort only, never colour.
+### F8 — Status-bucketed quota sort + Urgency weighting · M · needs B2, B3, F7
+**Function.**
+- **Classification:** one shared `classifyStatus(daysSince, frequency)` puts each chore in a
+  bucket, and bar colour uses the same function:
+  - red: overdue
+  - orange: due soon, remaining ratio ≤ 0.375
+  - green: everything else
+- **Order within each bucket:**
+  - red: by urgency-weighted overdue ratio, with duration breaking ties. The weights are low 0.75,
+    medium or unset 1, high 1.5.
+  - orange: by remaining ratio, ascending.
+  - green: by days since, ascending.
+- **Top 8 slots:** filled by quota (red 4, orange 2, green 2).
+  - Each red chore at a weighted ratio ≥ 1 takes an extra slot, taken from orange first.
+  - Unused slots cascade.
+- **Urgency:** affects the sort only, never colour.
 
-**Today.** `utils/choreSort.ts` uses `duration × daysSince/frequency` plus the long-term partition,
-in the household timezone. The `urgency` field already exists end to end (D1, API, form).
+**Today.**
+- `utils/choreSort.ts` scores by `duration × daysSince/frequency`, plus the long-term partition.
+- `urgency` already exists end to end: D1, API and form.
+
 **Port.**
-- Port the algorithm, keeping `daysSinceInZone`, and add the `SORT_*` constants.
-- Port SOURCE's `choreSort.test.ts`, including the quota-sum invariant.
+- Port the algorithm, keeping `daysSinceInZone`.
+- Add the `SORT_*` constants.
+- Port chores-reaper's `choreSort.test.ts`, including the quota-sum invariant.
 - No backend change.
-- CR-F16's open item: tune the constants on real data.
+- Tune the constants on real data.
 
-**Done when:** bucket, quota and escalation tests pass, and bar colour and sort agree.
+**Done when:** bucket, quota and escalation tests pass, and colour and sort agree.
 
-### F10 — Status-count strip · S · needs F9
-**Function.** A thin strip under the room tabs shows three proportional, animated segments: done
-today (green), due soon (orange) and overdue (red). Counts are taken over the *visible* list (room,
-plus search once F5 ships) and are live on every change. It has one `role="img"` label, e.g.
-"N done today · N due soon · N overdue". All-zero shows a full green "0".
+### F9 — Status-count strip · S · needs F8
+**Function.**
+- **Layout:** a thin strip under the room tabs with three proportional, animated segments: done
+  today (green), due soon (orange) and overdue (red).
+- **Counts:** taken over the visible list (the room, plus F4's search) and live on every change.
+- **Accessibility:** a single `role="img"` label, "N done today · N due soon · N overdue".
+- **Empty case:** when every count is zero, it shows a full green "0".
+
 **Port.**
 - `utils/choreStatusCounts.ts`, a pure function of `(chores, today, tz)` using `classifyStatus`.
 - `components/nav/StatusCountStrip.tsx`, mounted at the top of `ChoresView`.
-- Consider sticky positioning on phones.
-- Keep SOURCE's `data-testid`s.
+- Consider making it sticky on phones.
 
 **Done when:** count tests pass, including the visible-list scoping.
 
-### F11 — Stable list order between midnights · M · owner decision
-**Function.** The list re-sorts only on first load, at household-local midnight
-(`useMidnightClock`), on household switch and on manual refresh. Completing or editing a chore does
-not move it under the user's finger. New chores are appended until the next re-sort.
-**Decision needed.** On the kiosk, stable positions mattered. On a phone that's opened briefly,
-live re-sort may be preferable. Possible middle ground: re-sort on visibility return (F4).
-**Port.** A `sortedIds` snapshot in `ChoresView`. It must absorb outbox temp-id → real-id swaps
-in `handleFlushResults`.
-**Done when:** completing a chore leaves its position unchanged, and the order updates after a
-midnight tick.
+### F10 — Stable list order between midnights · M · needs F8
+**Function.**
+- **When the list re-sorts:** only on first load, at household-local midnight
+  (`useMidnightClock`) and on a household switch.
+- **What doesn't move it:** completing or editing a chore, or a refresh (F3/F18). Nothing moves
+  under the user's finger.
+- **New chores:** appended until the next re-sort.
 
-### F12 — Undo last complete / edit / delete · M (L with soft-delete)
-**Function.** After complete, edit or delete, the toast (F7) offers **Undo** for ~8 s.
-- **Undo complete or edit:** restores the prior values.
-- **Undo delete:** restores the chore.
-- **Offline:** cancels the still-queued outbox entry instead of queueing a compensating write.
+**Decision (owner, 2026-10-16):** on phones the list stays put until midnight, as on the kiosk.
+
+**Port.** A `sortedIds` snapshot in `ChoresView`. It must absorb outbox temp-id → real-id swaps in
+`handleFlushResults`.
+
+**Done when:** completing a chore leaves its position unchanged, and the order updates after a
+midnight tick and on household switch.
+
+### F11 — Undo last complete / edit / delete · M · needs F6
+**Function.** After a complete, edit or delete, the toast offers **Undo** for about 8 s.
+- **Complete or edit:** undo restores the prior values.
+- **Delete:** undo restores the chore.
+- **Offline:** cancels the still-queued outbox entry.
 - **Conflict:** a 409 shows "can't undo — someone changed it".
 
-This replaces the kiosk touch lock as the phone-side answer to accidental touches.
 **Constraints.**
-- `/complete` only moves the date forward (`backend/src/chores.ts` ~l.177), so undo uses
+- `/complete` only moves the date forward (`backend/src/chores.ts` ~l.177). Undo therefore uses a
   versioned `PUT` with the snapshot and the version returned by complete.
-- Delete is a hard `DELETE` (~l.200). Choose between re-creating via `client_id` (new id) and
-  soft-delete (new `deleted_at` migration, every query filtered).
+- Delete is a hard `DELETE` (~l.200). Choose between:
+  - re-create via `client_id`, which gives a new id
+  - soft-delete: a `deleted_at` migration, with every query filtered (raises effort to L)
 
-**Done when:** each undo path is tested online, offline-queued, and on conflict.
+**Done when:** each undo path is tested online, offline-queued and on conflict.
+
+### F12 — Redo · S · needs F11
+**Function.** After an undo, the toast offers **Redo**, which re-applies the undone action. It uses
+the same one-level snapshot and the same conflict handling as F11.
+
+**Done when:** an undo → redo round-trip is tested for complete, edit and delete.
 
 ### F13 — Frosted sticky bottom Add-Chore deck · M
 **Function.**
-- **Placement:** the primary "+ Add Chore" action moves to a sticky bottom deck in the thumb
-  zone.
-- **Frost:** bars scroll visibly under a frosted backing (`backdrop-blur`, gradient mask,
-  `pointer-events-none`), while the button stays opaque.
-- **Focus:** focus never parks a bar under the deck.
+- The primary "+ Add Chore" action moves to a sticky bottom deck, in the thumb zone.
+- Bars scroll visibly under a frosted backing (`backdrop-blur`, gradient mask,
+  `pointer-events-none`). The button stays opaque.
+- Focus never parks a bar under the deck.
 
 **Port.**
-- **Layout:** use `position: sticky; bottom: 0` inside document scroll. **Do not** copy
-  SOURCE's `100dvh`/`overflow:hidden` single-scroller shell, which is fragile on iOS.
-- **Spacing:** `env(safe-area-inset-bottom)` padding (check `viewport-fit=cover`) and
-  `scroll-padding-bottom` on `html`.
-- **Refs:** move `addChoreRef` (the offline-banner focus hand-off target).
-- **Settings gear:** rehome it, either staying top-right or moving into `NavBar`.
+- **Positioning:** `position: sticky; bottom: 0` inside document scroll. **Don't** copy a
+  `100dvh`/`overflow:hidden` single-scroller shell, which is fragile on iOS.
+- **Spacing:**
+  - `env(safe-area-inset-bottom)` padding (check `viewport-fit=cover`)
+  - `scroll-padding-bottom` on `html`
+- **Refs and controls:**
+  - Move `addChoreRef`, the offline-banner focus hand-off.
+  - Rehome the Settings gear.
 - **Tests:** update `ChoresView.test.tsx`.
 
-**Done when:** the deck is visible over a scrolled list on iOS Safari, iOS standalone and
-Android Chrome, and no bar is hidden behind it at the list end.
+**Done when:** the deck shows over a scrolled list on iOS Safari, iOS standalone and Android
+Chrome, and no bar is hidden at the list end.
 
-### F14 — Floating scroll-to-top button · S · offset depends on F13
-**Function.** After the user scrolls past 80 px, a round ↑ button appears at the bottom centre.
-- **Tap:** smooth-scrolls to the top (instant under reduced motion).
-- **Fade:** ~500 ms. It is non-interactive until fully shown and after fade-out, so a mid-fade
-  tap can't complete the bar beneath it.
+### F14 — Floating scroll-to-top button · S · offset from F13
+**Function.**
+- **Appearance:** once the user scrolls past 80 px, a round ↑ button appears at the bottom
+  centre.
+- **Tap:** smooth-scrolls to the top, or jumps instantly under reduced motion.
+- **Fade:** about 500 ms. The button is non-interactive until fully shown and after fade-out, so a
+  mid-fade tap can't complete the bar beneath it.
 
-This matters mainly on Android; iOS has status-bar tap.
 **Port.**
 - `useScrollPastThreshold` reading `window.scrollY`.
-- A `fixed` button above the F13 deck (or `bottom-6` plus the safe-area inset without it).
-- Below modal `z-50`.
+- A `fixed` button placed above the F13 deck.
+- Stack it below modal `z-50`.
 
-**Done when:** threshold, visibility and fade-gating tests pass.
+**Done when:** tests cover the threshold, visibility and fade-gating.
 
 ### F15 — `scrollbar-none` utility + modal scrollbar hiding · S
-**Function.** Restores the horizontal room-tab strip's intended hidden scrollbar.
-`NavBar.tsx` uses `scrollbar-none`, but TARGET's `index.css` never defines it on Tailwind v4.
-Optionally hides the native bar on modal cards on desktop.
-**Done when:** the utility is defined, and the room strip shows no scrollbar on desktop
-Chrome/Firefox.
+**Function.** Restores the hidden scrollbar on the horizontal room-tab strip. `NavBar.tsx` uses
+`scrollbar-none`, but `index.css` never defines it under Tailwind v4. Optionally hides the native
+bar on modal cards on desktop.
 
-### F16 — Swipe threshold as a fraction of bar width · S · optional
-**Function.** The swipe action fires past `min(25 % of bar width, 120 px)` instead of a fixed
-120 px, so it's easier on narrow phones and unchanged on tablets.
+**Done when:** the utility is defined, and the room strip shows no scrollbar in desktop Chrome
+and Firefox.
+
+### F16 — Android swipe style: threshold as a fraction of bar width · S
+**Function.** Applies only when the user's *Settings › Chore swipe style* is **Android**. The swipe
+action fires past `min(25 % of bar width, 120 px)` instead of a fixed 120 px, so it's easier on
+narrow phones and unchanged on wide screens. iOS mode is untouched.
+
 **Port.**
-- `ChoreTimerBar.tsx`: measure width at swipe start, then use it in the progress math and
-  `onSwipedLeft`/`onSwipedRight`.
-- Keep `delta: 10` and `preventScrollOnSwipe`; these are iOS fixes.
-- Keep the per-user `swipeStyle` contract and delete-confirm.
+- `ChoreTimerBar.tsx`, Android branch only: measure the bar width at swipe start, and use it in
+  the progress math and in `onSwipedLeft`/`onSwipedRight`.
+- Keep `delta: 10` and `preventScrollOnSwipe`.
+- Keep delete-confirm.
 - Stub the width in tests.
 
-**Done when:** android and ios modes are tested at 320 px and 1024 px widths.
+**Done when:** Android mode is tested at 320 px and 1024 px widths, and iOS mode is unchanged.
 
 ### F17 — Off-Cloudflare D1 backup export · S
-**Function.** A scheduled (weekly) `wrangler d1 export` writes a copy to storage outside D1 (R2 or
-a private artifact store) and retains N copies. This matches SOURCE's "backup must leave the
-box" rule. D1 Time Travel remains the primary rollback.
-**Done when:** the schedule runs, an export is restorable to a local D1, and retention is
-enforced.
+**Function.** A weekly scheduled `wrangler d1 export` writes a copy outside D1 (R2 or a private
+artifact store) and keeps the newest N copies. D1 Time Travel remains the primary rollback.
 
-### F18 — Realtime household doorbell · L · needs F4
+**Done when:**
+- The schedule runs.
+- An export restores to a local D1.
+- Retention is enforced.
+
+### F18 — Realtime household doorbell · L · needs F3
 **Function.** Changes appear on other open devices within a second.
+
 **Design.**
-- **Durable Object:** one per household, keyed by `householdId`, using hibernatable WebSockets
-  (no cost while idle).
-- **Endpoint:** `GET /api/households/:id/events` passes through accessAuth → resolveUser →
+- **Channel:** one Durable Object per household, using hibernatable WebSockets, which cost
+  nothing while idle.
+- **Route:** `GET /api/households/:id/events` passes through accessAuth → resolveUser →
   householdScope, then upgrades into the DO.
-- **Ringing the bell:** successful chore writes call `waitUntil(stub.fetch('/notify'))`. Outbox
-  replays and undo ring it too.
-- **Payload:** a content-free doorbell. Clients re-pull via F4's path.
-- **Fallback:** F4's visibility re-pull stays, because phones kill sockets in the background.
-- **Config:** `[[durable_objects]]` binding plus a migration tag in `wrangler.toml`. Check
-  free-tier limits and that the service worker doesn't intercept the upgrade.
-- **Carry over** CR push-review items: connection cap, and no redundant re-fetch on open.
+- **Notify:** successful chore writes, outbox replays and undo/redo call
+  `waitUntil(stub.fetch('/notify'))`.
+- **Payload:** a content-free doorbell; clients re-pull through F3's path.
+- **Fallback:** F3's visibility re-pull stays, because phones kill background sockets.
 
-**Done when:** an e2e test with two pages shows A's write reflected on B without a poll, and
-cross-household isolation is tested.
-
-### F19 — Redo · S · optional, needs F12
-**Function.** After an undo, the toast offers **Redo**, which re-applies the undone action. It
-uses the same one-level snapshot and the same conflict handling.
-
-### F20 — Kiosk embeddability · M · gated on owner decision
-**Decision.** Which app should the wall Pi's pi-kiosk shell frame?
-- **TARGET:** this feature.
-- **SOURCE on the Pi 5 (CR-F23):** this feature is then not needed.
-
-Framing TARGET gives up SOURCE's zero-internet-dependency property (`TRADEOFFS.md`).
-**Function.** The pi-kiosk shell can iframe `chores.4irl.app`.
 **Port.**
-- **Headers:** add `frontend/public/_headers` with
-  `Content-Security-Policy: frame-ancestors 'self' <shell origin>`. Nothing blocks framing
-  today; the header makes it explicit.
-- **Access cookie:** set Access `SameSite=None` and a long session duration in Zero Trust.
-- **Login:** Access/IdP login pages refuse framing, so plan a top-level login flow in the kiosk
-  Chromium profile. Third-party-cookie settings matter.
-- **Docs:** document it in `ARCHITECTURE.md`.
+- `[[durable_objects]]` binding plus a migration tag in `wrangler.toml`.
+- Check free-tier limits.
+- Check that the service worker doesn't intercept the upgrade.
+- Add a connection cap.
+- Skip the redundant re-fetch on open.
 
-**Done when:** the shell frames the app on the wall Pi through a session expiry and re-login.
-
-### F21 — Kiosk-mode lock guard + view reset · M · gated on F20 + pi-kiosk Phase 4
-**Function.** This is active only when the app is embedded and the pinned shell origin sends
-`kiosk/v1` `kiosk-state { locked }`. It does nothing on phones.
-- **While locked:** complete, edit and delete are guarded. A blocked tap shows a non-blocking
-  padlock, and a second tap within 1.5 s / 60 px requests unlock (`lock-request`).
-- **Lock reset:** on lock-engage and on each idle tick, the view resets to: top, room All,
-  search cleared, Add form closed.
-- **Ownership:** per CR-F15's contract, the kiosk owns the timer and the app owns what "locked"
-  means.
-
-**Source contracts.** `chores-reaper/plans/META-PLAN.md` § F2 (as reworked by CR-F20) and § F19.
-`plans/feature/kiosk-shell-extraction/kiosk-shell-extraction.md`.
+**Done when:** a two-page e2e test shows A's write on B with no poll, and cross-household isolation
+is tested.
