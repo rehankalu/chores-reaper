@@ -58,6 +58,9 @@ hosting.
 - **F16 swipe threshold:** folded in for the `Settings › Chore swipe style › Android` mode only.
   iOS mode is unchanged.
 - **F11 undo and F12 redo:** both are folded in as features, no longer optional.
+- **Realtime push dropped (former F18, closed as not planned as 4IRL/chores4irl#92):** a per-household
+  Durable Object WebSocket doorbell is more machinery than needed. F3's re-pull on
+  focus/visibility plus a slow poll is sufficient.
 - **Four bugs found in TARGET get their own issues (B1–B4)**, addressed in turn before features.
 - **Wall display:** the wall Pi shows the **Cloudflare app**. All kiosk work belongs to
   `rehankalu/pi-kiosk`, not to this fold, wiki or issues. It covers kiosk-shell, screen-blank,
@@ -93,9 +96,8 @@ Effort: S=1 · M=2 · L=3. The ID order is the implementation order. ★ marks t
 | F15 | `scrollbar-none` utility + hide native bars on modal cards | CR-F22 (subset) | C · List UX | S | — |
 | F16 | Android swipe style: threshold as a fraction of bar width | CR-#23 (part) | C · List UX | S | — |
 | F17 | Off-Cloudflare D1 backup export (scheduled) | (gap vs CR backups) | E · Ops | S | — |
-| F18 | Realtime household doorbell (Durable Object + hibernatable WebSocket) | CR-#21 (stage 2) | D · Sync & recovery | L | F3 |
 
-**Tally:** bugs 4 · features 26 · total **30 points**.
+**Tally:** bugs 4 · features 23 · total **27 points**.
 
 **Focus path:** B1 → B2 → B3 → B4, then F2 → F7 → F8 → F9 → F10. The bugs come first, then the
 migration safety net, then the field removal and the sort it unblocks. F1 and F3–F6 are
@@ -106,7 +108,7 @@ independent quick wins and can be interleaved after the bugs.
 - **B · Form & feedback:** add-mode default and the toast.
 - **S · Status & sort:** CR-#32 → CR-F4 → CR-F16 → CR-F17 lineage.
 - **C · List UX:** search, clear-✕, deck, scroll chrome, swipe.
-- **D · Sync & recovery:** cross-device freshness, undo and redo.
+- **D · Sync & recovery:** cross-device freshness (F3), undo and redo.
 - **E · Ops:** deploy safety and backups.
 
 ### Not ported (decided)
@@ -116,6 +118,7 @@ independent quick wins and can be interleaved after the bugs.
 | CR-#24 room datalist (+ its mobile follow-up) | TARGET rooms are managed D1 entities chosen by native `<select>`, which is already correct on phones. |
 | CR-F22 overlay thumb + full-bleed | Phones already draw fading overlay scrollbars. Only the CSS subset (F15) is worth taking. |
 | CR-#23 direction swap + progressive reveal | TARGET's per-user `android` swipe style already does this. Only the threshold (F16) remains. |
+| CR-#21 SSE realtime push (stage 2: Durable Object doorbell, former F18) | Dropped 2026-10-16. F3's focus/visibility re-pull plus polling is sufficient. |
 | CR-F6 `c4i.local` hostname | Pi host config. TARGET is on `chores.4irl.app`. |
 | CR-F23 Pi 5 hosting | Probably obsoleted: the wall Pi shows the Cloudflare app. |
 
@@ -398,7 +401,7 @@ only that field (it never submits or closes) and refocuses the input.
 **Function.**
 - **When the list re-sorts:** only on first load, at household-local midnight
   (`useMidnightClock`) and on a household switch.
-- **What doesn't move it:** completing or editing a chore, or a refresh (F3/F18). Nothing moves
+- **What doesn't move it:** completing or editing a chore, or a refresh (F3). Nothing moves
   under the user's finger.
 - **New chores:** appended until the next re-sort.
 
@@ -498,26 +501,3 @@ artifact store) and keeps the newest N copies. D1 Time Travel remains the primar
 - The schedule runs.
 - An export restores to a local D1.
 - Retention is enforced.
-
-### F18 — Realtime household doorbell · L · needs F3
-**Function.** Changes appear on other open devices within a second.
-
-**Design.**
-- **Channel:** one Durable Object per household, using hibernatable WebSockets, which cost
-  nothing while idle.
-- **Route:** `GET /api/households/:id/events` passes through accessAuth → resolveUser →
-  householdScope, then upgrades into the DO.
-- **Notify:** successful chore writes, outbox replays and undo/redo call
-  `waitUntil(stub.fetch('/notify'))`.
-- **Payload:** a content-free doorbell; clients re-pull through F3's path.
-- **Fallback:** F3's visibility re-pull stays, because phones kill background sockets.
-
-**Port.**
-- `[[durable_objects]]` binding plus a migration tag in `wrangler.toml`.
-- Check free-tier limits.
-- Check that the service worker doesn't intercept the upgrade.
-- Add a connection cap.
-- Skip the redundant re-fetch on open.
-
-**Done when:** a two-page e2e test shows A's write on B with no poll, and cross-household isolation
-is tested.
