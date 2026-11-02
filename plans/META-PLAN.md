@@ -44,7 +44,7 @@ has no ungated item left, so — by the rule this file set — the ★ returns t
 gated kiosk-track head that held it before `F21` took it on 2026-09-20. `F19`'s fold-back
 did not move the ★ — `F19` shipped without holding it.)*
 **Nothing in this repo is runnable today**. Every remaining feature waits on an external
-gate: `F15` on pi-kiosk Phase 2 parity, `F11`/`F12` on pi-kiosk Phase 4, and `F23` (added
+gate: `F15` on pi-kiosk Phase 2 parity, `F11`/`F12` on pi-kiosk Phase 6, and `F23` (added
 2026-10-14, re-opening the infra track) on homelab's Pi 5 bootstrap plus rollout step 2.
 `F23` moves C4I to the Pi 5 at `https://chores.milarachi.app`. It is the household hosting
 rollout's step 3 (`~/Code/_STRONGHOLD/decisions/2026-10-13-household-hosting-rollout.md`).
@@ -119,7 +119,7 @@ design decisions, and migration phases live in
 **`plans/feature/kiosk-shell-extraction/kiosk-shell-extraction.md`** — the cross-repo
 contract. Consequences here: `F3`/`F7`/`F8`/`F9`/`F10`/`F13` are **superseded
 (migrated)**; `F11`/`F12` remain chores4irl features re-scoped onto the `kiosk/v1`
-postMessage contract (deferred until pi-kiosk Phase 4); **`F15`** (adopt kiosk-shell:
+postMessage contract (deferred until pi-kiosk Phase 6); **`F15`** (adopt kiosk-shell:
 remove the `F1`/`F2` overlays, commit the embeddability guarantee) is gated on pi-kiosk
 Phase 2 parity.
 
@@ -154,7 +154,7 @@ Kiosk extraction track (2026-07-15 — see plans/feature/kiosk-shell-extraction/
          the timer, app owns behavior-under-lock; DD-2's all-input-blocking shell overlay is retired by F20)
     F3 · F7 · F8 · F9 · F10 · F13 ── SUPERSEDED (migrated to pi-kiosk; no chores4irl session runs them)
     F11 (undo) ─→ F12 (redo) ── remain here, re-scoped onto the kiosk/v1 postMessage
-        contract; deferred until pi-kiosk Phase 4 delivers the contract
+        contract; deferred until pi-kiosk Phase 6 delivers the contract
 
 Infra track (re-opened 2026-10-14 by F23):
     (F6 — local URL alias c4i.local / c4i — shipped #43)
@@ -231,7 +231,7 @@ Infra track (re-opened 2026-10-14 by F23):
   shell's `kiosk-state { locked }` message and sending `lock-request` back rather than
   deleting the app-side lock semantics outright), and `F11`/`F12`
   (app-data undo/redo, re-scoped onto the `kiosk/v1` contract, gated on the external
-  Phase 4).
+  Phase 6).
 - **Infra track: re-opened by `F23` (2026-10-14).** `F6` (#43) renamed the Pi to `c4i`, so the app answers at
   `http://c4i.local/` (mDNS) and `http://c4i/` (router DNS) — Standing invariant 13 and
   the Baseline's *Deployment* paragraph record the mechanism. Its alias is the natural
@@ -259,10 +259,10 @@ first of the double-tap unlock) — verified on the wall Pi and recorded in
 `plans/feature/kiosk-shell-adoption/`; then `/run-feature F15` on branch
 `feature/kiosk-shell-adoption`. Its cold survey must check that gate and refuse — not
 proceed on a partial parity. At planning it decides the split its Open risks (f) recommend
-(blank removal + embeddability at Phase 2; the lock hand-over at Phase 4, where the
+(blank removal + embeddability at Phase 2; the lock hand-over at Phase 6, where the
 `kiosk/v1` `kiosk-state { locked }` / `lock-request` messages arrive) and keeps an app-side
 `isLocked` + idle tick feeding Standing invariant 19's reset (Open risks (e); the `F19`
-kept contract). `F11`/`F12` wait on pi-kiosk Phase 4. A new ungated idea added via
+kept contract). `F11`/`F12` wait on pi-kiosk Phase 6. A new ungated idea added via
 `/new-feature` would take the ★ back from `F15` on its own reconcile. `F6`'s alias is live —
 pi-kiosk's `target_url` question now belongs to `F15`'s Open risks (d).
 
@@ -289,7 +289,7 @@ pi-kiosk's `target_url` question now belongs to `F15`'s Open risks (d).
   clauses, and only when it moves C4I to `m4i`.
 - **Do not** start `F3`/`F7`/`F8`/`F9`/`F10`/`F13` in this repo at all — they are
   superseded (migrated to pi-kiosk, 2026-07-15). `F15` cannot start until pi-kiosk
-  Phase 2 parity is verified on the Pi; `F11`/`F12` cannot start until pi-kiosk Phase 4
+  Phase 2 parity is verified on the Pi; `F11`/`F12` cannot start until pi-kiosk Phase 6
   delivers the `kiosk/v1` contract.
 - **Do not** resurrect `F1`'s "must use real wall-clock time" / "must swallow the waking tap"
   constraints, or the `F2` lock contract as reworked by `F20` (#60), as open items — they are verified-shipped facts;
@@ -307,8 +307,8 @@ pi-kiosk's `target_url` question now belongs to `F15`'s Open risks (d).
 
 **Next F-ID:** `F24`
 
-- [ ] **F11** (added 2026-07-07; re-scoped 2026-07-15): Undo — allow the user to recover from accidental touch and chore completion. Bounded undo cache (1–2 levels sufficient if complexity/size limited); an undo is itself a write that must emit on the SSE bus. **Implemented in chores4irl**, surfaced through the pi-kiosk console via the `kiosk/v1` postMessage contract (chores4irl is the contract's first app-side client). Deferred until pi-kiosk Phase 4 delivers the contract — see `plans/feature/kiosk-shell-extraction/kiosk-shell-extraction.md`.
-- [ ] **F12** (added 2026-07-07; re-scoped 2026-07-15): Redo — re-apply an action undone via F11; pairs with F11's cache (same 1–2-level bound). Same surfacing as F11 (`kiosk/v1` contract); depends on F11 + pi-kiosk Phase 4.
+- [ ] **F11** (added 2026-07-07; re-scoped 2026-07-15): Undo — allow the user to recover from accidental touch and chore completion. Bounded undo cache (1–2 levels sufficient if complexity/size limited); an undo is itself a write that must emit on the SSE bus. **Implemented in chores4irl**, surfaced through the pi-kiosk console via the `kiosk/v1` postMessage contract (chores4irl is the contract's first app-side client). Deferred until pi-kiosk Phase 6 delivers the contract — see `plans/feature/kiosk-shell-extraction/kiosk-shell-extraction.md`.
+- [ ] **F12** (added 2026-07-07; re-scoped 2026-07-15): Redo — re-apply an action undone via F11; pairs with F11's cache (same 1–2-level bound). Same surfacing as F11 (`kiosk/v1` contract); depends on F11 + pi-kiosk Phase 6.
 - [ ] **F15** (added 2026-07-15): Adopt kiosk-shell — remove the F1 auto-screen-blank and F2 touch-lock overlays from the app (their behavior is now provided by the pi-kiosk shell in front of the iframe-embedded app), and commit the embeddability guarantee (no `X-Frame-Options`/`frame-ancestors` denying the shell origin; recorded as an nginx.conf comment + README note). Runs only after pi-kiosk Phase 2 parity is verified on the Pi. See `plans/feature/kiosk-shell-extraction/kiosk-shell-extraction.md`.
 - [ ] **F23** (added 2026-10-14): Serve chores4irl at chores.milarachi.app over HTTPS via Tailscale. Follow the hosting decision as outlined by `2026-10-13-household-hosting-rollout.md`. Put Caddy in front of the existing stack on c4i, with a Cloudflare DNS-01 certificate and the Pi's Tailscale address in DNS. The kiosk stays on http://localhost/. c4i.local and c4i remain plain-http LAN fallbacks. Exit check: the app loads at https://chores.milarachi.app from a phone on cellular with Tailscale on. (scope clarified 2026-10-14 by the owner: this is the decision's rollout step 3. C4I moves to the Pi 5 (`m4i`) behind homelab's Caddy; it is not an interim Caddy on `c4i`. The kiosk and LAN-fallback bullets therefore follow the decision, as recorded in § F23.)
 
@@ -325,10 +325,10 @@ pi-kiosk's `target_url` question now belongs to `F15`'s Open risks (d).
 
 | Order | Feature | Effort | Depends on | Track |
 |---|---|---|---|---|
-| ★ 1 *(gated)* | **F15** — Adopt kiosk-shell: remove F1/F2 overlays + embeddability guarantee **[FOCUS — kiosk-track head, gated]** *(added 2026-07-15; lock half reshaped by the shipped F20)* | **M** | **external:** pi-kiosk Phase 2 parity verified on the Pi (lock half: `F20`'s as-built contract; the lock hand-over rides Phase 4's `kiosk/v1` — Open risks (f)) | Kiosk extraction |
-| 2 | **F11** — Undo *(re-scoped 2026-07-15 onto the `kiosk/v1` contract)* | **M–L** | **external:** pi-kiosk Phase 4 (`kiosk/v1` contract) | Kiosk extraction |
-| 3 | **F12** — Redo *(re-scoped 2026-07-15)* | **M** | F11 + same external gate | Kiosk extraction |
-| 4 *(gated)* | **F23** — Serve C4I at `https://chores.milarachi.app` from the Pi 5 (`m4i`); hosting rollout step 3 *(added 2026-10-14)* | **L** | **external:** homelab step 1 live on `m4i` (Caddy DNS-01, deploy poller, R2 backups) **+** rollout step 2 done (pi-kiosk on the Pi 4; `F15` or its Phase-2 half merged) | Infra |
+| ★ 1 *(gated)* | **F15** — Adopt kiosk-shell: remove F1/F2 overlays + embeddability guarantee **[FOCUS — kiosk-track head, gated]** *(added 2026-07-15; lock half reshaped by the shipped F20)* | **M** | pi-kiosk#P2 (parity verified on the Pi; lock half: F20's as-built contract) | Kiosk extraction |
+| 2 | **F11** — Undo *(re-scoped 2026-07-15 onto the `kiosk/v1` contract)* | **M–L** | pi-kiosk#P6 (kiosk/v1 contract) | Kiosk extraction |
+| 3 | **F12** — Redo *(re-scoped 2026-07-15)* | **M** | F11; pi-kiosk#P6 (kiosk/v1 contract) | Kiosk extraction |
+| 4 *(gated)* | **F23** — Serve C4I at `https://chores.milarachi.app` from the Pi 5 (`m4i`); hosting rollout step 3 *(added 2026-10-14)* | **L** | homelab#P2 (Caddy DNS-01, deploy poller, R2 backups on m4i); cond: rollout step 2 done (pi-kiosk on the Pi 4; F15 or its Phase-2 half merged) | Infra |
 | ~~—~~ | ~~**F3 · F7 · F8 · F9 · F10 · F13** — device-control console + its controls~~ | — | **superseded 2026-07-15** — migrated to pi-kiosk (shell console / agent controls / settings; `F13`'s plan harvested, see its banner) | *(migrated)* |
 
 **Effort tally (remaining, in this repo).** Chore-list track: **0 pts** (all shipped).
@@ -349,8 +349,8 @@ stays **M** on paper but changes *shape*: since `F20` (#60) its lock
 half is no longer "delete the overlay" — the in-app guard/padlock stays, and only the
 timer, lock state and indicator control move to the shell over a `kiosk/v1` addition
 (`kiosk-state { locked }` in, `lock-request { locked }` out) that pi-kiosk schedules for
-**Phase 4**, not Phase 2. Its plan must decide whether to split (blank removal at Phase 2 /
-lock hand-over at Phase 4) — Open risks (f).
+**Phase 6**, not Phase 2. Its plan must decide whether to split (blank removal at Phase 2 /
+lock hand-over at Phase 6) — Open risks (f).
 The former device-control tally (~11 pts placeholder-ship + connections) now lives in the
 pi-kiosk repo's own planning, not here.
 
@@ -407,8 +407,8 @@ pi-kiosk repo's own planning, not here.
 | Feature | Status | Branch | PR |
 |---|---|---|---|
 | **F15 — adopt kiosk-shell** ★FOCUS *(added 2026-07-15; kiosk-track head)* | pending *(gated on external pi-kiosk Phase 2 parity)* | `feature/kiosk-shell-adoption` | — |
-| F11 — undo *(re-scoped 2026-07-15: `kiosk/v1` contract)* | pending *(gated on external pi-kiosk Phase 4)* | `feature/undo` | — |
-| F12 — redo *(re-scoped 2026-07-15)* | pending *(gated on F11 + same external gate)* | `feature/redo` | — |
+| F11 — undo *(re-scoped 2026-07-15: `kiosk/v1` contract)* | pending *(gated on external pi-kiosk Phase 6)* | `feature/undo` | — |
+| F12 — redo *(re-scoped 2026-07-15)* | pending *(gated on F11 + pi-kiosk Phase 6)* | `feature/redo` | — |
 | F23 — serve at chores.milarachi.app from the Pi 5 *(added 2026-10-14; rollout step 3)* | pending *(gated on homelab step 1 + rollout step 2)* | `feature/milarachi-app-hosting` | — |
 | F3 · F7 · F8 · F9 · F10 · F13 — device-control console + controls | **superseded** *(2026-07-15 — migrated to pi-kiosk; branches never created)* | — | — |
 
@@ -927,10 +927,10 @@ is possible — only that certain actions are guarded. When `F15` moves the lock
 timer/state/indicator to the shell (the shape since `F20`, #60 — the guard and padlock stay
 in the app), it keeps a
 minimal app-side `isLocked` fed by the shell (`kiosk/v1` `kiosk-state { locked }` plus the
-idle tick, DD-3 — or an interim source until Phase 4; `F15` Open risks (e)/(f)) and re-keys
+idle tick, DD-3 — or an interim source until Phase 6; `F15` Open risks (e)/(f)) and re-keys
 this effect to it. Deleting the reset along with the overlay would regress Standing
 invariant 19. `F19` itself deliberately added no `kiosk/v1` listener (the contract is
-Phase 4).
+Phase 6).
 
 **Delete this entry** once `F15` has shipped and folded its part into
 Standing invariant 19.
@@ -1100,9 +1100,9 @@ for the non-root user service; portrait-only toggle; host-bridge file-watch mech
   shell can't see. Surfaced through the pi-kiosk console via the **`kiosk/v1` postMessage
   contract** (app registers controls with the shell; shell renders them in the console
   banner and posts `console-action` back) — chores4irl is the contract's first app-side
-  client. **Deferred until pi-kiosk Phase 4 delivers the contract.** Branch `feature/undo`.
+  client. **Deferred until pi-kiosk Phase 6 delivers the contract.** Branch `feature/undo`.
 - **F12 — Redo** *(= legacy `F16-L`; re-scoped 2026-07-15)*. Re-apply an undone action;
-  pairs with `F11`'s cache. **Effort M.** Depends on `F11` + the same external Phase 4
+  pairs with `F11`'s cache. **Effort M.** Depends on `F11` + the same external Phase 6
   gate. Branch `feature/redo`.
 
 ---
@@ -1155,7 +1155,7 @@ feature runs. No in-repo dependency.
   idleExpiries]` reset is re-keyed to that source and must *survive* — deleting it would
   regress Standing invariant 19 (Open risks (e); the `F19` kept contract). `NavBar`'s
   `pl-14` gutter reverts or stays per the `F2` kept contract. If the plan splits (Open
-  risks (f)), this bullet moves to the Phase-4 follow-on F-ID.
+  risks (f)), this bullet moves to the Phase-6 follow-on F-ID.
 - Standing invariants 8–9 are retired from the Baseline (annotated as relocated, not
   regressed — the behavior lives in pi-kiosk).
 - `nginx.conf` carries a comment guaranteeing embeddability (no frame-blocking headers;
@@ -1190,10 +1190,10 @@ view reset was the first such app-side behavior; since `F20`, #60, the lock is n
 `inert` gate at all — the guard in `ChoreTimerBar` is "guarded" in code). Consequence for
 this feature: remove the blank overlay and the lock's indicator and timer (the guard and
 padlock stay — (f)), but **keep a minimal app-side `isLocked` state** (plus the idle tick)
-and source it from the shell. The gap is that `kiosk-state` arrives with pi-kiosk **Phase 4**
+and source it from the shell. The gap is that `kiosk-state` arrives with pi-kiosk **Phase 6**
 while this feature is gated on **Phase 2** — decide in this feature's plan whether (i) to
 keep `useTouchLock`'s bare inactivity timer (no overlay) as the interim `isLocked` source
-until Phase 4 replaces it, or (ii) to pull the `kiosk-state` listener forward into Phase 2
+until Phase 6 replaces it, or (ii) to pull the `kiosk-state` listener forward into Phase 2
 of the pi-kiosk design (it is a one-way, additive message). Option (i) keeps this repo
 self-sufficient and is the default if pi-kiosk's Phase 2 lands without the message. Either
 way, record the resolution in `plans/feature/kiosk-shell-adoption/` and in the design doc.
@@ -1207,11 +1207,11 @@ the second-tap detection, and the shipped `F19` reset. Contract additions to spe
 (DD-2/DD-3 amendment) when this feature plans: shell → app `kiosk-state { blanked, locked }`
 (already in DD-3) plus an idle-expiry tick while locked (for the re-keyed `F19` reset); app → shell
 `lock-request { locked: false }` (double-tap path) — and `{ locked: true }` only if the app
-ever grows a lock control of its own. Because these ride the `kiosk/v1` contract (Phase 4),
-this feature's lock half is effectively Phase-4-gated while its blank half is Phase-2-gated:
+ever grows a lock control of its own. Because these ride the `kiosk/v1` contract (Phase 6),
+this feature's lock half is effectively Phase-6-gated while its blank half is Phase-2-gated:
 decide at planning whether to **split** (blank removal + embeddability at Phase 2; lock
-hand-over at Phase 4 — the recommended shape, new F-IDs via `/new-feature` if split) or to
-hold the whole feature to Phase 4. Parity checklist for the lock half is `F20`'s as-built
+hand-over at Phase 6 — the recommended shape, new F-IDs via `/new-feature` if split) or to
+hold the whole feature to Phase 6. Parity checklist for the lock half is `F20`'s as-built
 contract — the `F2` kept contract above — not `F2`'s original; note the padlock is itself
 non-blocking (only a 120 px hit circle at the blocked tap catches taps), so the shell must
 never overlay the iframe while locked.
@@ -1363,9 +1363,9 @@ KIOSK EXTRACTION TRACK (2026-07-15 — external gates; see plans/feature/kiosk-s
   [pi-kiosk Phase 2: agent activity feed + overlay port, parity on the Pi] ──► ★ F15 (adopt kiosk-shell)  [FOCUS — gated]
       (F15 removes the shipped F1 overlay and moves the lock's timer/state/indicator to the shell —
        Standing invariants 8–9 hold until then; since F20 (#60) the in-app guard + padlock STAY and the
-       lock half rides the Phase-4 kiosk/v1 contract — F15 may split; see its Open risks (f))
+       lock half rides the Phase-6 kiosk/v1 contract — F15 may split; see its Open risks (f))
   [pi-kiosk Phase 3: console + agent controls  ·  absorbs F3/F7/F8/F10/F13 — superseded here]
-  [pi-kiosk Phase 4: settings (absorbs F9) + kiosk/v1 contract] ──► F11 (undo) ─→ F12 (redo)
+  [pi-kiosk Phase 6: settings (absorbs F9) + kiosk/v1 contract] ──► F11 (undo) ─→ F12 (redo)
 
 INFRA TRACK (re-opened 2026-10-14; F6 shipped #43 — the LAN alias c4i.local / c4i is live; see F15's Open risks (d) for pi-kiosk's target_url)
   [homelab step 1: Pi 5 `m4i` bootstrap — Caddy DNS-01, deploy poller, R2 backups] ─┐
@@ -1380,14 +1380,14 @@ INFRA TRACK (re-opened 2026-10-14; F6 shipped #43 — the LAN alias c4i.local / 
   shipped #60 and re-keyed the `F19` reset (#56, which had shipped ahead of its soft slot
   after `F20`); its earlier soft `F14` → `F4` → `F5` preference of 2026-07-08 was honored — #34, #38,
   #39 — and the 2026-09-20 "`F21` first" preference by #46, then `F16` by #50, `F17` by #52, `F18` by #54, `F22` by #57 and `F20` by #60 — and two **external** gates (`F15` on pi-kiosk Phase 2 parity; `F11`/`F12` on Phase
-  4's `kiosk/v1` contract, with `F12` also following `F11`). The infra track completed with
+  6's `kiosk/v1` contract, with `F12` also following `F11`). The infra track completed with
   `F6` (#43) and was re-opened on 2026-10-14 by `F23`. `F23` is gated on homelab step 1
   and rollout step 2, so it chains after `F15` (or its Phase-2 half) but has no in-repo
   prerequisite of its own.
 - **Focus path:** `F15` — ★FOCUS, **gated** on pi-kiosk Phase 2 parity (the kiosk-track
   head; the ★ returned to it at `F20`'s fold-back, #60, because no ungated chore-list item
   remains). Nothing in this repo is runnable until that gate opens; `F11`/`F12` follow on
-  Phase 4. A new ungated `/new-feature` add would take the ★ back. The 2026-09-20 capture
+  Phase 6. A new ungated `/new-feature` add would take the ★ back. The 2026-09-20 capture
   batch is closed — no deferred re-evaluation remains.
 - **Cross-feature couplings to honor:**
   - **F23 ↔ F15 / pi-kiosk `target_url` (F15's Open risks (d)) ↔ the shipped F6
@@ -1498,7 +1498,7 @@ INFRA TRACK (re-opened 2026-10-14; F6 shipped #43 — the LAN alias c4i.local / 
     all-input-blocking shell overlay. Split after `F15`: shell = timer + lock state +
     indicator control; app = guard + padlock + second-tap detection + the shipped `F19`
     reset. Messages: `kiosk-state { locked }` + an idle tick in, `lock-request { locked }`
-    out — `kiosk/v1`, Phase 4 (`F15` Open risks (f)). The parity checklist for the lock half
+    out — `kiosk/v1`, Phase 6 (`F15` Open risks (f)). The parity checklist for the lock half
     is `F20`'s as-built contract (the `F2` kept contract).
   - **The shipped F20 lock ↔ F11/F12:** independent — undo/redo are console actions on chore data; whether
     the shell's console is reachable while locked is a pi-kiosk decision, not this repo's.
@@ -1511,7 +1511,7 @@ INFRA TRACK (re-opened 2026-10-14; F6 shipped #43 — the LAN alias c4i.local / 
     kiosk owns the inactivity timer; the app owns what "locked" means for it.* When `F15`
     moves the lock's timer/state/indicator to the shell, it must keep an app-side `isLocked` state fed by the
     shell (`kiosk/v1` `kiosk-state { locked }` + idle tick, DD-3 — or an interim source
-    until Phase 4; `F15` Open risks (e)) and re-key `F19`'s reset to it. A `locked` signal
+    until Phase 6; `F15` Open risks (e)) and re-key `F19`'s reset to it. A `locked` signal
     does not mean "no interaction possible", only "certain actions are guarded"; pi-kiosk's
     shell must therefore forward the lock state to the app, not merely overlay it.
   - **The shipped F19 reset ↔ the shipped F18 ref + button (Standing invariants 17 + 19):**
